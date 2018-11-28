@@ -1,0 +1,267 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date:    13:35:45 02/09/2018 
+-- Design Name: 
+-- Module Name:    Sbox - Behavioral 
+-- Project Name: 
+-- Target Devices: 
+-- Tool versions: 
+-- Description: 
+--
+-- Dependencies: 
+--
+-- Revision: 
+-- Revision 0.01 - File Created
+-- Additional Comments: 
+--
+----------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+
+library work;
+
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx primitives in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+
+-- I put std_logic_vector vs bit_vector cause I m not sure what kind of signal we have as an input http://vhdlguru.blogspot.co.uk/2010/03/what-is-difference-between-stdlogic-and.html
+entity Sbox is
+    Port ( Sbox_in : in  std_logic_vector(7 downto 0);
+			  en : in std_logic;
+	        Chip_Select : in std_logic;	 
+           Sbox_out  : OUT std_logic_vector(7 downto 0);
+			  Sbox_out_Test: OUT std_logic_vector(3 downto 0)
+			  
+			  
+			  ) ;
+end Sbox;
+
+ -----------------------------------------------------------------------------
+  -- Functions
+  -----------------------------------------------------------------------------
+
+
+  
+architecture Behavioral of Sbox is
+
+
+function StageA_X(Value: in std_logic_vector(3 downto 0)) return std_logic_vector is
+	Variable output: std_logic_vector(1 downto 0);
+begin
+  
+   output(1):= ((Value(3) xor Value(2)) and (Value(1) xor Value(0))) xor (Value(0) and Value(2));
+   output(0):= ((Value(3) and Value(1)) xor (Value(0) and Value(2)));
+  return output;
+  
+end StageA_X;
+
+function X_Square(Value: in std_logic_vector(3 downto 0)) return std_logic_vector is
+	Variable output: std_logic_vector(3 downto 0);
+begin
+  
+   output(3):= Value(3);
+   output(2):= Value(3)  xor  Value(2);
+	output(1):= Value(2) xor Value(1);
+	output(0):= (Value(0) xor Value(1)) xor Value(3);
+  return output;
+  
+end X_Square;
+
+function X_lambda(Value: in std_logic_vector(3 downto 0)) return std_logic_vector is
+	Variable output: std_logic_vector(3 downto 0);
+	
+begin
+  
+ 
+   output(3):= Value(0) xor Value(2);
+   output(2):= (Value(1) xor Value(3)) xor (Value(0) xor Value(2));
+	output(1):= Value(3);
+	output(0):= Value(2);
+  return output;
+  
+end X_lambda;
+
+function X_phi(Value: in std_logic_vector(1 downto 0)) return std_logic_vector is
+	Variable output: std_logic_vector(1 downto 0);
+begin
+  
+	output(1):= Value(1) xor Value(0);
+	output(0):= Value(1);
+  return output;
+  
+end X_phi;
+	
+function X_Gray(Value: in std_logic_vector(7 downto 0)) return std_logic_vector is
+   
+	Variable A,B,C,D: std_logic_vector(1 downto 0);
+	Variable output: std_logic_vector(3 downto 0);
+	
+begin
+  
+      A := Value(7) & Value(6);
+		B := Value(5) & Value(4);
+		C := Value(3) & Value(2);
+		D := Value(1) & Value(0);
+		
+		
+	 output := (StageA_X((A xor B)&(C xor D)) xor StageA_X(B&D)) & (X_phi(StageA_X(A&C)) xor StageA_X(B&D));
+  return output;
+  
+end X_Gray;
+	
+function X_Invers(Value: in std_logic_vector(3 downto 0)) return std_logic_vector is
+	Variable output: std_logic_vector(3 downto 0);
+	Variable B,C,D,E: std_logic_vector(3 downto 0);
+begin
+		B := X_Square(Value);
+		C := X_Square(B);
+		D := X_Square(C);
+		E := X_Gray(C & B);
+		output := X_Gray(D & E);
+
+  return output;
+  
+end X_Invers;
+
+
+function Isomorphic(Value: in std_logic_vector(7 downto 0)) return std_logic_vector is
+	Variable output: std_logic_vector(7 downto 0);
+	
+begin
+
+   output(7):= Value(7) xor Value(5);
+   output(6):= Value(7) xor Value(6) xor Value(4) xor Value(3) xor Value(2) xor Value(1);
+	output(5):= Value(7) xor Value(5) xor Value(3) xor Value(2);
+	output(4):= Value(7) xor Value(5) xor Value(3) xor Value(2) xor Value(1);
+	output(3):= Value(7) xor Value(6) xor Value(2) xor Value(1);
+   output(2):= Value(7) xor Value(4) xor Value(3) xor Value(2) xor Value(1);
+	output(1):= Value(6) xor Value(4) xor Value(1);
+	output(0):= Value(6) xor Value(1) xor Value(0);
+	
+  return output;
+  
+end Isomorphic;
+
+function Inverse_Isomorphic(Value: in std_logic_vector(7 downto 0)) return std_logic_vector is
+	Variable output: std_logic_vector(7 downto 0);
+	
+begin
+
+   output(7):= Value(7) xor Value(6) xor  Value(5) xor Value(1);
+   output(6):= Value(6) xor Value(2);
+	output(5):= Value(6) xor Value(5) xor Value(1);
+	output(4):= Value(6) xor Value(5) xor Value(4) xor Value(2) xor Value(1);
+	output(3):= Value(5) xor Value(4) xor Value(3) xor Value(2) xor Value(1);
+   output(2):= Value(7) xor Value(4) xor Value(3) xor Value(2) xor Value(1);
+	output(1):= Value(5) xor Value(4);
+	output(0):= Value(6) xor Value(5) xor Value(4) xor Value(2) xor Value(0);
+	
+  return output;
+  
+end Inverse_Isomorphic;
+	
+function Affine_Trans(Value: in std_logic_vector(7 downto 0)) return std_logic_vector is
+	Variable output: std_logic_vector(7 downto 0);
+	
+begin
+
+   output(7):= Value(7) xor Value(6) xor  Value(5) xor Value(4) xor  Value(3) xor '0';
+   output(6):= Value(6) xor Value(5) xor  Value(4) xor Value(3) xor  Value(2) xor '1';
+	output(5):= Value(5) xor Value(4) xor  Value(3) xor Value(2) xor  Value(1) xor '1';
+	output(4):= Value(4) xor Value(3) xor  Value(2) xor Value(1) xor  Value(0) xor '0';
+	output(3):= Value(7) xor Value(3) xor  Value(2) xor Value(1) xor  Value(0) xor '0';
+   output(2):= Value(7) xor Value(6) xor  Value(2) xor Value(1) xor  Value(0) xor '0';
+	output(1):= Value(7) xor Value(6) xor  Value(5) xor Value(1) xor  Value(0) xor '1';
+	output(0):= Value(7) xor Value(6) xor  Value(5) xor Value(4) xor  Value(0) xor '1';
+	
+  return output;
+  
+end Affine_Trans;
+
+function Inverse_Affine_Trans(Value: in std_logic_vector(7 downto 0)) return std_logic_vector is
+	Variable output: std_logic_vector(7 downto 0);
+	
+begin
+
+   output(7):= Value(6) xor Value(4) xor  Value(1) xor '0';
+   output(6):= Value(5) xor Value(3) xor  Value(0) xor '0';
+	output(5):= Value(7) xor Value(4) xor  Value(2) xor '0';
+	output(4):= Value(6) xor Value(3) xor  Value(1) xor '0';
+	output(3):= Value(5) xor Value(2) xor  Value(0) xor '0';
+   output(2):= Value(7) xor Value(4) xor  Value(1) xor '1';
+	output(1):= Value(6) xor Value(3) xor  Value(0) xor '0';
+	output(0):= Value(7) xor Value(5) xor  Value(2) xor '1';
+	
+  return output;
+  
+end  Inverse_Affine_Trans;
+
+
+function Multiplicative_Inverse(Value: in std_logic_vector(7 downto 0)) return std_logic_vector is
+	Variable output,A: std_logic_vector(7 downto 0);
+	Variable B,C,D,E,F,G,H,I,J,K,L: std_logic_vector(3 downto 0);
+	
+begin
+    A := Isomorphic(Value);
+	 B := A(7 downto 4);
+	 C := A(3 downto 0);
+	 D := X_Square(B);
+	 F := C xor B;
+	 G := X_Gray(F & C);
+	 E := X_lambda(D);
+	 H := E xor G;
+	 I := X_Invers(H);
+	 J := X_Gray(B & I);
+	 K := X_Gray(I & F);
+	 output := Inverse_Isomorphic(J & K);
+	 
+	
+  return output;
+  
+ 
+end  Multiplicative_Inverse;
+
+
+begin
+
+
+Sbox_out <= Affine_Trans(Multiplicative_Inverse("00000100"));
+--Sbox_out_Test <= X_Square("0111");
+--Sbox_out_Test <= X_lambda("0100"); 
+--Sbox_out_Test <= X_lambda("0100"); 
+--Sbox_out_Test <= X_Gray("10111100") xor X_lambda("0100");
+Sbox_out_Test <= X_Invers("0011");
+--Sbox_out <= Isomorphic("00000100");
+
+
+
+--process is 
+--Variable output, input: std_logic_vector(7 downto 0);
+
+
+--begin
+
+--input := X_Gray("00000001") & "0000";
+--output := Subbytes("01010101");
+--Sbox_out <= Subbytes("01010101");
+--  if  Chip_Select = '0' then
+	  -- Subbytes
+--    Sbox_out <= Affine_Trans(Multiplicative_Inverse(Sbox_in));
+--	 else
+	 -- Inv Subbytes
+  --  Sbox_out <= Inverse_Affine_Trans(Multiplicative_Inverse(Sbox_in));
+	 --end if;
+
+--end process;
+end Behavioral;
